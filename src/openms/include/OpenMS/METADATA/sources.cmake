@@ -48,6 +48,7 @@ SpectrumLookup.h
 SpectrumMetaDataLookup.h
 SpectrumSettings.h
 Tagging.h
+XQuestResultMeta.h
 )
 
 ### add path to the filenames

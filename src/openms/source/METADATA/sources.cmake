@@ -47,6 +47,7 @@ SpectrumLookup.cpp
 SpectrumMetaDataLookup.cpp
 SpectrumSettings.cpp
 Tagging.cpp
+XQuestResultMeta.cpp
 )
 
 ### add path to the filenames
