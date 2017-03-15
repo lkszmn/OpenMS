@@ -52,8 +52,8 @@ SvmTheoreticalSpectrumGeneratorTrainer
 TICCalculator
 TransformationEvaluation
 TopPerc
+XLConverter
 XMLValidator
-XFDR
 )
 
 if(NOT DISABLE_OPENSWATH)
