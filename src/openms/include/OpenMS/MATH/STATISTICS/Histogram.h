@@ -98,28 +98,23 @@ public:
         max_(max),
         bin_size_(bin_size)
       {
-        this->initBins_();
-      }
-
-
-      /**
-        @brief constructor with data iterator and min, max, bin_size parameters
-
-        @exception Exception::OutOfRange is thrown if @p bin_size negative or zero
-      */
-      template <typename DataIterator>
-      Histogram(DataIterator begin, DataIterator end, BinSizeType min, BinSizeType max, BinSizeType bin_size) :
-        min_(min),
-        max_(max),
-        bin_size_(bin_size)
-      {
-        this->initBins_();
-        for (DataIterator it = begin; it != end; ++it)
+        if (bin_size_ <= 0)
         {
-          this->inc((BinSizeType) *it);
+          throw Exception::OutOfRange(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION);
+        }
+        else
+        {
+          // if max_ == min_ there is only one bin
+          if (max_ != min_)
+          {
+            bins_ = std::vector<ValueType>(Size(ceil((max_ - min_) / bin_size_)), 0);
+          }
+          else
+          {
+            bins_ = std::vector<ValueType>(1, 0);
+          }
         }
       }
-
 
       ///destructor
       virtual ~Histogram()
@@ -212,8 +207,8 @@ public:
       */
       Size inc(BinSizeType val, ValueType increment = 1)
       {
-        Size bin_index = this->valToBin_(val);
-        this->bins_[bin_index] += increment;
+        Size bin_index = valToBin_(val);
+        bins_[bin_index] += increment;
         return bin_index;
       }
 
@@ -330,26 +325,6 @@ protected:
         }
       }
 
-      ///initialize the bins
-      void initBins_()
-      {
-        if (this->bin_size_ <= 0)
-        {
-          throw Exception::OutOfRange(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION);
-        }
-        else
-        {
-          // if max_ == min_ there is only one bin
-          if (this->max_ != this->min_)
-          {
-            this->bins_ = std::vector<ValueType>(Size(ceil((max_ - min_) / bin_size_)), 0);
-          }
-          else
-          {
-            this->bins_ = std::vector<ValueType>(1, 0);
-          }
-        }
-      }
     };
 
     ///Print the contents to a stream.
