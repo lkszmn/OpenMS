@@ -34,6 +34,8 @@
 
 #include <OpenMS/config.h>
 #include <OpenMS/APPLICATIONS/TOPPBase.h>
+#include <OpenMS/FORMAT/XQuestResultXMLFile.h>
+#include <OpenMS/METADATA/XQuestResultMeta.h>
 
 using namespace OpenMS;
 using namespace std;
@@ -68,6 +70,10 @@ using namespace std;
 class TOPPXLConverter :
   public TOPPBase
 {
+  static const String param_input_file;
+  static const String param_output_file;
+
+
 public:
   TOPPXLConverter() :
     TOPPBase("XLConverter", "Converts files containing cross-link information in various different other formats.", false)
@@ -78,16 +84,46 @@ protected:
 
   void registerOptionsAndFlags_()
   {
+    // Input file
+    registerInputFile_(TOPPXLConverter::param_input_file, "<input_file>", "", "Input file with cross-link information to be converted", true, false);
+    setValidFormats_(TOPPXLConverter::param_input_file, ListUtils::create<String>("xml"));
+
+    // Which program should be able to read the provided output file
+
+    // Output file
+    registerOutputFile_(TOPPXLConverter::param_output_file, "<output_file>", "", "Output file", true, false);
+    setValidFormats_(TOPPXLConverter::param_output_file, ListUtils::create<String>("csv"));
 
   }
 
   ExitCodes main_(int, const char**)
   {
-    cout << "Hello world" << endl;
+
+    String arg_input_file = getStringOption_(TOPPXLConverter::param_input_file);
+
+    // Handle xQuest input file
+    if (arg_input_file.hasSuffix("xml"))
+    {
+      XQuestResultXMLFile input_file;
+      vector< XQuestResultMeta > metas;
+      vector < vector < PeptideIdentification > > spectra;
+      input_file.load(arg_input_file, metas, spectra, false, 1, false);
+
+
+
+
+    }
+
+
+
     return EXECUTION_OK;
   }
 
 };
+
+const String TOPPXLConverter::param_input_file = "input_file";
+const String TOPPXLConverter::param_output_file = "output_file";
+
 
 int main(int argc, const char** argv)
 {
