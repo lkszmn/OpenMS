@@ -71,13 +71,15 @@ class TOPPSpectraSTCreateAdapter :
     public TOPPBase
 {
   public:
-    // Define parameter name
-    static const String param_executable;
 
+    static const String param_executable;
     static const String param_spectra_files;  // From which the library is to be generated
     static const String param_spectra_files_formats;  // File formats being allowed for the input spectra
     static const String param_params_file;  // Parameter file for library creation
     static const String param_library_file;   // Library output
+
+    // Further parameters
+    static const String param_remark;
 
     TOPPSpectraSTCreateAdapter() :
       TOPPBase("SpectraSTCreateAdapter", "Interface to the CREATE Mode of the SpectraST executable", false)
@@ -106,7 +108,11 @@ class TOPPSpectraSTCreateAdapter :
       // library (output) file
       registerOutputFile_(TOPPSpectraSTCreateAdapter::param_library_file, "<library_file>", "", "Output library file", true, false);
       setValidFormats_(TOPPSpectraSTCreateAdapter::param_library_file, ListUtils::create<String>("splib"), false);
+
+      // Remark
+      registerStringOption_(TOPPSpectraSTCreateAdapter::param_remark, "<remark>", "", "Add a Remark=<remark> comment to all library entries created.", false, false);
     }
+
 
 
     // the main_ function is called after all parameters are read
@@ -148,6 +154,14 @@ class TOPPSpectraSTCreateAdapter :
 
       // For spectrast, the file extension has to be removed
       arguments << File::removeExtension(library_file).toQString().prepend("-cN");
+
+      // Parameter remark
+      String param_remark = getStringOption_(TOPPSpectraSTCreateAdapter::param_remark);
+      if ( ! param_remark.empty())
+      {
+        arguments << param_remark.toQString().prepend("-cm");
+      }
+
 
 
       // TODO Add more parameter
@@ -199,12 +213,12 @@ class TOPPSpectraSTCreateAdapter :
       }
 
       // Write command-line call to DEBUG_LOG
-      LOG_DEBUG << "COMMAND: " << executable;
+      cout << "COMMAND: " << executable;
       for (QStringList::const_iterator it = arguments.begin(); it != arguments.end(); ++it)
       {
-          LOG_DEBUG << " " << it->toStdString();
+          cout << " " << it->toStdString();
       }
-      LOG_DEBUG << endl;
+      cout << endl;
 
 
       // Run spectrast
@@ -228,7 +242,7 @@ const String TOPPSpectraSTCreateAdapter::param_spectra_files = "spectra_files";
 const String TOPPSpectraSTCreateAdapter::param_spectra_files_formats = "msp,hlf,pepXML,pep.xml,xml,ms2,splib";
 const String TOPPSpectraSTCreateAdapter::param_params_file = "params_file";
 const String TOPPSpectraSTCreateAdapter::param_library_file = "library_file";
-
+const String TOPPSpectraSTCreateAdapter::param_remark = "remark";
 
 
 // the actual main function needed to create an executable
