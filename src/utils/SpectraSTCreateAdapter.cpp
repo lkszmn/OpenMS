@@ -80,6 +80,7 @@ class TOPPSpectraSTCreateAdapter :
 
     // Further parameters
     static const String param_remark;
+    static const String param_print_MRM_table;
 
     TOPPSpectraSTCreateAdapter() :
       TOPPBase("SpectraSTCreateAdapter", "Interface to the CREATE Mode of the SpectraST executable", false)
@@ -111,6 +112,9 @@ class TOPPSpectraSTCreateAdapter :
 
       // Remark
       registerStringOption_(TOPPSpectraSTCreateAdapter::param_remark, "<remark>", "", "Add a Remark=<remark> comment to all library entries created.", false, false);
+
+      // Whether to print MRM table
+      registerFlag_(TOPPSpectraSTCreateAdapter::param_print_MRM_table, "Whether to write all library spectra as SRM transition tables.", true);
     }
 
 
@@ -162,7 +166,8 @@ class TOPPSpectraSTCreateAdapter :
         arguments << param_remark.toQString().prepend("-cm");
       }
 
-
+      // Parameter print MRM table
+      arguments << (getFlag_(TOPPSpectraSTCreateAdapter::param_print_MRM_table) ? "-cM" : "cM!");
 
       // TODO Add more parameter
 
@@ -243,7 +248,7 @@ const String TOPPSpectraSTCreateAdapter::param_spectra_files_formats = "msp,hlf,
 const String TOPPSpectraSTCreateAdapter::param_params_file = "params_file";
 const String TOPPSpectraSTCreateAdapter::param_library_file = "library_file";
 const String TOPPSpectraSTCreateAdapter::param_remark = "remark";
-
+const String TOPPSpectraSTCreateAdapter::param_print_MRM_table = "print_MRM_table";
 
 // the actual main function needed to create an executable
 int main(int argc, const char ** argv)
