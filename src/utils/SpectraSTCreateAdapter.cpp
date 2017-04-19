@@ -83,6 +83,9 @@ class TOPPSpectraSTCreateAdapter :
     static const String param_print_MRM_table;
     static const String param_min_prob;
     static const double param_min_prob_default;
+    static const String param_max_fdr;
+    static const double param_max_fdr_default;
+    static const String param_dataset_name;
 
     TOPPSpectraSTCreateAdapter() :
       TOPPBase("SpectraSTCreateAdapter", "Interface to the CREATE Mode of the SpectraST executable", false)
@@ -120,8 +123,13 @@ class TOPPSpectraSTCreateAdapter :
 
       // Min probability of spectra
       registerDoubleOption_(TOPPSpectraSTCreateAdapter::param_min_prob, "<min_prob>", TOPPSpectraSTCreateAdapter::param_min_prob_default, "Include all spectra identified with probability no less than <min_prob> in the library.", false, true);
-    }
 
+      // Max FDR
+      registerDoubleOption_(TOPPSpectraSTCreateAdapter::param_max_fdr, "<max_fdr>", TOPPSpectraSTCreateAdapter::param_max_fdr_default, "(Only for pepXML import) Include spectra with global FDR no greater than <fdr> the library.	", false, true);
+
+      // Dataset name
+      registerStringOption_(TOPPSpectraSTCreateAdapter::param_dataset_name, "<dataset_name>", "", "Specify a dataset identifier for the file to be imported.", false, false);
+    }
 
 
     // the main_ function is called after all parameters are read
@@ -129,7 +137,7 @@ class TOPPSpectraSTCreateAdapter :
     {
       //--------------------------------------------------------
       // Figure out the input format of the spectra input files
-      //--------------------------------------------------------
+      //--------------f------------------------------------------
       StringList spectra_files = getStringList_(TOPPSpectraSTCreateAdapter::param_spectra_files);
       if (spectra_files.size() < 1)
       {
@@ -157,9 +165,6 @@ class TOPPSpectraSTCreateAdapter :
         LOG_ERROR << "ERROR: Unrecognized input format from spectra file: " << first_spectra_file << endl;
         return ILLEGAL_PARAMETERS;
       }
-
-
-
 
       // Assemble command line for SpectraST
       QStringList arguments;
@@ -194,7 +199,7 @@ class TOPPSpectraSTCreateAdapter :
         return ILLEGAL_PARAMETERS;
       }
 
-      // For spectrast, the file extension has to be removed
+      // For spectrast, the file extension has to be removed from the library file
       arguments << File::removeExtension(library_file).toQString().prepend("-cN");
 
       // Parameter remark
@@ -205,17 +210,32 @@ class TOPPSpectraSTCreateAdapter :
       }
 
       // Parameter print MRM table
-      arguments << (getFlag_(TOPPSpectraSTCreateAdapter::param_print_MRM_table) ? "-cM" : "cM!");
+      arguments << (getFlag_(TOPPSpectraSTCreateAdapter::param_print_MRM_table) ? "-cM" : "-cM!");
 
-
+      // Parameter min_prob
       double min_prob = getDoubleOption_(TOPPSpectraSTCreateAdapter::param_min_prob);
       if (min_prob < 0 || min_prob > 1)
       {
         LOG_ERROR << "ERROR: Values for parameter -min_prob larger than 1 or less than 0 are not allowed. Terminating." << endl;
         return ILLEGAL_PARAMETERS;
       }
+      arguments << QString::number(min_prob).prepend("-cP");
 
+      // Parameter max_fdr
+      double max_fdr = getDoubleOption_(TOPPSpectraSTCreateAdapter::param_max_fdr);
+      if (max_fdr < 0)
+      {
+        LOG_ERROR << "ERROR: Values for parameter -max_fdr less than 0 are not allowed. Terminating." << endl;
+        return ILLEGAL_PARAMETERS;
+      }
+      arguments << QString::number(max_fdr).prepend("-cq");
 
+      // Parameter Dataset name
+      String dataset_name = getStringOption_(TOPPSpectraSTCreateAdapter::param_dataset_name);
+      if ( ! dataset_name.empty())
+      {
+        arguments << dataset_name.toQString().prepend("-cn");
+      }
 
       // Add all input files. Make sure that the file ending is the same as defined from the first provided file
       for (StringList::const_iterator spectra_files_it = spectra_files.begin();
@@ -256,6 +276,18 @@ class TOPPSpectraSTCreateAdapter :
 private:
 
     String input_format;
+
+    /**
+     * @brief Checks whether the input_format is part of the extension list given in @p file_list
+     * @param List of file extensions @p file_list
+     * @return Whether the currently_determined input_format is part of the file list @p file_list
+     */
+    inline bool inputFormatIsIn(const String & file_list)
+    {
+      StringList l = ListUtils::create<String>(file_list);
+      return std::find(l.begin(), l.end(), this->input_format) != l.end();
+    }
+
 };
 // End of Tool definition
 
@@ -268,6 +300,9 @@ const String TOPPSpectraSTCreateAdapter::param_remark = "remark";
 const String TOPPSpectraSTCreateAdapter::param_print_MRM_table = "print_MRM_table";
 const String TOPPSpectraSTCreateAdapter::param_min_prob = "min_prob";
 const double TOPPSpectraSTCreateAdapter::param_min_prob_default = 0.9;
+const String TOPPSpectraSTCreateAdapter::param_max_fdr = "max_fdr";
+const double TOPPSpectraSTCreateAdapter::param_max_fdr_default = 9999;
+const String TOPPSpectraSTCreateAdapter::param_dataset_name;
 
 // the actual main function needed to create an executable
 int main(int argc, const char ** argv)
