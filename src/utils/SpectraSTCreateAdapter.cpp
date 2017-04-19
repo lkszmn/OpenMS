@@ -81,6 +81,8 @@ class TOPPSpectraSTCreateAdapter :
     // Further parameters
     static const String param_remark;
     static const String param_print_MRM_table;
+    static const String param_min_prob;
+    static const double param_min_prob_default;
 
     TOPPSpectraSTCreateAdapter() :
       TOPPBase("SpectraSTCreateAdapter", "Interface to the CREATE Mode of the SpectraST executable", false)
@@ -115,6 +117,9 @@ class TOPPSpectraSTCreateAdapter :
 
       // Whether to print MRM table
       registerFlag_(TOPPSpectraSTCreateAdapter::param_print_MRM_table, "Whether to write all library spectra as SRM transition tables.", true);
+
+      // Min probability of spectra
+      registerDoubleOption_(TOPPSpectraSTCreateAdapter::param_min_prob, "<min_prob>", TOPPSpectraSTCreateAdapter::param_min_prob_default, "Include all spectra identified with probability no less than <min_prob> in the library.", false, true);
     }
 
 
@@ -122,6 +127,39 @@ class TOPPSpectraSTCreateAdapter :
     // the main_ function is called after all parameters are read
     ExitCodes main_(int, const char **)
     {
+      //--------------------------------------------------------
+      // Figure out the input format of the spectra input files
+      //--------------------------------------------------------
+      StringList spectra_files = getStringList_(TOPPSpectraSTCreateAdapter::param_spectra_files);
+      if (spectra_files.size() < 1)
+      {
+        LOG_ERROR << "ERROR: At least one input file containing spectra must be provided" << endl;
+        return ILLEGAL_PARAMETERS;
+      }
+      String first_spectra_file = spectra_files[0];
+
+      // Figure out the input file format from the first provided file
+      StringList valid_spectra_formats;
+      StringUtils::split(TOPPSpectraSTCreateAdapter::param_spectra_files_formats, ",", valid_spectra_formats);
+      for (StringList::const_iterator valid_spectra_formats_it = valid_spectra_formats.begin();
+           valid_spectra_formats_it != valid_spectra_formats.end(); ++valid_spectra_formats_it)
+      {
+        String current_format = *valid_spectra_formats_it;
+        if (first_spectra_file.hasSuffix(current_format))
+        {
+          this->input_format = current_format;
+          break;
+        }
+      }
+      // Exit if spectra format has not been recognized
+      if (this->input_format.empty())
+      {
+        LOG_ERROR << "ERROR: Unrecognized input format from spectra file: " << first_spectra_file << endl;
+        return ILLEGAL_PARAMETERS;
+      }
+
+
+
 
       // Assemble command line for SpectraST
       QStringList arguments;
@@ -169,49 +207,25 @@ class TOPPSpectraSTCreateAdapter :
       // Parameter print MRM table
       arguments << (getFlag_(TOPPSpectraSTCreateAdapter::param_print_MRM_table) ? "-cM" : "cM!");
 
-      // TODO Add more parameter
 
-
-      // Set the input files
-      StringList spectra_files = getStringList_(TOPPSpectraSTCreateAdapter::param_spectra_files);
-      if (spectra_files.size() < 1)
+      double min_prob = getDoubleOption_(TOPPSpectraSTCreateAdapter::param_min_prob);
+      if (min_prob < 0 || min_prob > 1)
       {
-        LOG_ERROR << "ERROR: At least one input file containing spectra must be provided" << endl;
+        LOG_ERROR << "ERROR: Values for parameter -min_prob larger than 1 or less than 0 are not allowed. Terminating." << endl;
         return ILLEGAL_PARAMETERS;
       }
-      String first_spectra_file = spectra_files[0];
 
-      // Figure out the input file format from the first provided file
-      StringList valid_spectra_formats;
-      String input_format;
-      StringUtils::split(TOPPSpectraSTCreateAdapter::param_spectra_files_formats, ",", valid_spectra_formats);
-      for (StringList::const_iterator valid_spectra_formats_it = valid_spectra_formats.begin();
-           valid_spectra_formats_it != valid_spectra_formats.end(); ++valid_spectra_formats_it)
-      {
-        String current_format = *valid_spectra_formats_it;
-        if (first_spectra_file.hasSuffix(current_format))
-        {
-          input_format = current_format;
-          break;
-        }
-      }
 
-      // Exit if spectra format has not been recognized
-      if (input_format.empty())
-      {
-        LOG_ERROR << "ERROR: Unrecognized input format from spectra file: " << first_spectra_file << endl;
-        return ILLEGAL_PARAMETERS;
-      }
 
       // Add all input files. Make sure that the file ending is the same as defined from the first provided file
       for (StringList::const_iterator spectra_files_it = spectra_files.begin();
            spectra_files_it != spectra_files.end(); ++spectra_files_it)
       {
         String spectra_file = *spectra_files_it;
-        if ( ! spectra_file.hasSuffix(input_format))
+        if ( ! spectra_file.hasSuffix(this->input_format))
         {
           LOG_ERROR << "ERROR: Input spectra file does not agree in format: "
-                         << spectra_file << " is not " << input_format << endl;
+                         << spectra_file << " is not " << this->input_format << endl;
           return ILLEGAL_PARAMETERS;
         }
         arguments << spectra_file.toQString();
@@ -239,6 +253,9 @@ class TOPPSpectraSTCreateAdapter :
       // Exit the tool
       return EXECUTION_OK;
     }
+private:
+
+    String input_format;
 };
 // End of Tool definition
 
@@ -249,6 +266,8 @@ const String TOPPSpectraSTCreateAdapter::param_params_file = "params_file";
 const String TOPPSpectraSTCreateAdapter::param_library_file = "library_file";
 const String TOPPSpectraSTCreateAdapter::param_remark = "remark";
 const String TOPPSpectraSTCreateAdapter::param_print_MRM_table = "print_MRM_table";
+const String TOPPSpectraSTCreateAdapter::param_min_prob = "min_prob";
+const double TOPPSpectraSTCreateAdapter::param_min_prob_default = 0.9;
 
 // the actual main function needed to create an executable
 int main(int argc, const char ** argv)
