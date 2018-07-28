@@ -35,6 +35,10 @@
 cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 project("OpenMS_host")
 
+SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+SET(BUILD_SHARED_LIBS OFF)
+SET(CMAKE_EXE_LINKER_FLAGS "-static")
+
 #------------------------------------------------------------------------------
 # General CMake definitions & helper
 #------------------------------------------------------------------------------
@@ -236,7 +240,8 @@ endif()
 
 #------------------------------------------------------------------------------
 # we build shared libraries
-set(BUILD_SHARED_LIBS true)
+#set(BUILD_SHARED_LIBS true)
+set(BUILD_SHARED_LIBS false)
 
 #------------------------------------------------------------------------------
 # Host directory for referencing from subprojects
