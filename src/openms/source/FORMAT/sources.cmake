@@ -11,6 +11,7 @@ Bzip2InputStream.cpp
 CachedMzML.cpp
 ChromeleonFile.cpp
 CompressedInputSource.cpp
+CometMSFraggerParams.cpp
 CVMappingFile.cpp
 ConsensusXMLFile.cpp
 ControlledVocabulary.cpp

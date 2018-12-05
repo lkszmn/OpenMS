@@ -95,6 +95,71 @@ using namespace std;
 // We do not want this class to show up in the docu:
 /// @cond TOPPCLASSES
 
+////// Product declarations and inline impl. (possibly Product.h) //////
+class Product{
+public:
+    // use this class to construct Product.
+    class Builder;
+
+private:
+    // variables in need of initialization to make valid object
+    const int i;
+    const float f;
+    const char c;
+
+    // Only one simple constructor - rest is handled by Builder
+    Product( const int i, const float f, const char c ) : i(i), f(f), c(c){}
+
+public:
+    // Product specific functionality
+    void print();
+    void doSomething();
+    void doSomethingElse();
+};
+
+
+class Builder::Product{
+private:
+    // variables needed for construction of object of Product class
+    int i;
+    float f;
+    char c;
+
+    // default values for variables
+    static constexpr int defaultI = 1;
+    static constexpr float defaultF = 3.1415f;
+    static constexpr char defaultC = 'a';
+
+public:
+    // create Builder with default values assigned
+    // (in C++11 they can be simply assigned above on declaration instead)
+    Builder() : i( defaultI ), f( defaultF ), c( defaultC ){ }
+
+    // sets custom values for Product creation
+    // returns Builder for shorthand inline usage (same way as cout <<)
+    Builder& setI( int i ){ this->i = i; return *this; }
+    Builder& setF( float f ){ this->f = f; return *this; }
+    Builder& setC( char c ){ this->c = c; return *this; }
+
+    // prepare specific frequently desired Product
+    // returns Builder for shorthand inline usage (same way as cout <<)
+    Builder& setProductP(){
+        i = 42;
+        f = -1.0f/12.0f;
+        c = '@';
+
+        return *this;
+    }
+
+    // produce desired Product
+    Product build(){
+        // Here, optionaly check variable consistency
+        // and also if Product is buildable from given information
+
+        return Product( i, f, c );
+    }
+};
+
 
 class TOPPCometAdapter final :
   public TOPPBase
@@ -111,7 +176,7 @@ public:
   {
   }
 
-protected:
+private:
   void registerOptionsAndFlags_() override
   {
     registerMandatoryParameters_();
@@ -667,7 +732,6 @@ private:
 int main(int argc, const char** argv)
 {
   TOPPCometAdapter tool;
-
   return tool.main(argc, argv);
 }
 

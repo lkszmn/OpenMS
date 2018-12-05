@@ -24,6 +24,7 @@ Bzip2Ifstream.h
 Bzip2InputStream.h
 CachedMzML.h
 ChromeleonFile.h
+CometMSFraggerParams.h
 CompressedInputSource.h
 CVMappingFile.h
 ConsensusXMLFile.h
