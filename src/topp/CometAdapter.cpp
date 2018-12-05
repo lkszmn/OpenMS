@@ -42,6 +42,7 @@
 #include <OpenMS/CHEMISTRY/ResidueDB.h>
 #include <OpenMS/CHEMISTRY/ResidueModification.h>
 #include <OpenMS/SYSTEM/File.h>
+#include <QDir>
 
 #include <fstream>
 
@@ -95,7 +96,7 @@ using namespace std;
 /// @cond TOPPCLASSES
 
 
-class TOPPCometAdapter :
+class TOPPCometAdapter final :
   public TOPPBase
 {
 public:
@@ -113,19 +114,7 @@ public:
 protected:
   void registerOptionsAndFlags_() override
   {
-
-    registerInputFile_("in", "<file>", "", "Input file");
-    setValidFormats_("in", ListUtils::create<String>("mzML"));
-    registerOutputFile_("out", "<file>", "", "Output file");
-    setValidFormats_("out", ListUtils::create<String>("idXML"));
-    registerInputFile_("database", "<file>", "", "FASTA file", true, false, ListUtils::create<String>("skipexists"));
-    setValidFormats_("database", ListUtils::create<String>("FASTA"));
-    registerInputFile_("comet_executable", "<executable>",
-      // choose the default value according to the platform where it will be executed
-      "comet.exe",
-      "Comet executable of the installation e.g. 'comet.exe'", true, false, ListUtils::create<String>("skipexists"));
-    registerStringOption_("comet_version","<choice>", "2016.01 rev. 2","comet version: (year,version,revision)",false,false); //required as first line in the param file
-
+    registerMandatoryParameters_();
     //
     // Optional parameters
     //
@@ -157,7 +146,7 @@ protected:
     setMinInt_("allowed_missed_cleavages", 0);
     setMaxInt_("allowed_missed_cleavages", 5);
     //Fragment Ions
-    registerDoubleOption_("fragment_bin_tolerance", "<tolerance>", 0.02, "Bin size (in Da) for matching fragment ions. Ion trap: 1.0005, high res: 0.02. CAUTION: Low tolerances have heavy impact on RAM usage. Consider using use_sparse_matrix and/or spectrum_batch_size.", false, true); 
+    registerDoubleOption_("fragment_bin_tolerance", "<tolerance>", 0.02, "Bin size (in Da) for matching fragment ions. Ion trap: 1.0005, high res: 0.02. CAUTION: Low tolerances have heavy impact on RAM usage. Consider using use_sparse_matrix and/or spectrum_batch_size.", false, true);
     setMinFloat_("fragment_bin_tolerance", 0.01);
     registerDoubleOption_("fragment_bin_offset", "<fraction>", 0.0, "Offset of fragment bins scaled by tolerance. Ion trap: 0.4, high res: 0.0.", false, true);
     setMinFloat_("fragment_bin_offset", 0.0);
@@ -227,6 +216,7 @@ protected:
     registerStringOption_("require_variable_mod", "<bool>", "false", "If true, requires at least one variable modification per peptide", false, true);
     setValidStrings_("require_variable_mod", ListUtils::create<String>("true,false"));
   }
+
 
   vector<ResidueModification> getModifications_(StringList modNames)
   {
@@ -508,17 +498,16 @@ protected:
     //-------------------------------------------------------------
     // parsing parameters
     //-------------------------------------------------------------
-    
-    // do this early, to see if comet is installed
-    String comet_executable = getStringOption_("comet_executable");
-    String tmp_param = File::getTemporaryFile();
-    writeLog_("Comet is writing the default parameter file...");
-    runExternalProcess_(comet_executable.toQString(), QStringList() << "-p" << tmp_param.c_str());
 
-    String inputfile_name = getStringOption_("in");
-    String out = getStringOption_("out");
+    // Load required parameters here to prevent tool from running if they have not been specified
+    const String &inputfile_name = getStringOption_(IN);
+    const String &out = getStringOption_(OUT);
+    const String &database = getStringOption_(DATABASE);
+    const QString &comet_executable = getStringOption_(COMET_EXECUTABLE).toQString();
 
+    readDefaultParameters_(comet_executable);
 
+    return EXECUTION_OK;
     //-------------------------------------------------------------
     // reading input
     //-------------------------------------------------------------
@@ -593,7 +582,7 @@ protected:
     // run comet
     //-------------------------------------------------------------
     // Comet execution with the executable and the arguments StringList
-    TOPPBase::ExitCodes exit_code = runExternalProcess_(comet_executable.toQString(), arguments);
+    TOPPBase::ExitCodes exit_code = runExternalProcess_(comet_executable, arguments);
     if (exit_code != EXECUTION_OK)
     {
       return exit_code;
@@ -629,6 +618,49 @@ protected:
     return EXECUTION_OK;
   }
 
+private:
+    // Parameter Names
+    static constexpr const char* IN = "in";
+    static constexpr const char* OUT = "out";
+    static constexpr const char* DATABASE = "database";
+    static constexpr const char* COMET_EXECUTABLE = "comet_executable";
+    static constexpr const char* PIN_OUT = "pin_out";
+
+    inline void registerMandatoryParameters_()
+    {
+      registerInputFile_(IN, "<file>", "", "Input file");
+      setValidFormats_(IN, ListUtils::create<String>("mzML"));
+
+      registerOutputFile_(OUT, "<file>", "", "Output file");
+      setValidFormats_(OUT, ListUtils::create<String>("idXML"));
+
+      registerInputFile_(DATABASE, "<file>", "", "FASTA file", true, false, ListUtils::create<String>("skipexists"));
+      setValidFormats_(DATABASE, ListUtils::create<String>("FASTA"));
+
+      registerInputFile_(COMET_EXECUTABLE, "<executable>",
+                // choose the default value according to the platform where it will be executed
+                           "comet.exe",
+                           "Comet executable of the installation e.g. 'comet.exe'", true, false, ListUtils::create<String>("skipexists"));
+      registerStringOption_("comet_version","<choice>", "2016.01 rev. 2","comet version: (year,version,revision)",false,false); //required as first line in the param file
+    }
+
+    void readDefaultParameters_(const QString &comet_executable)
+    {
+      const QString &tmp_dir = makeTempDirectory_().toQString();
+      runExternalProcess_(comet_executable, QStringList("-p"), tmp_dir);
+
+      const QString &param_file = QDir(tmp_dir).filePath("comet.params.new");
+
+      ifstream infile(param_file.toStdString());
+      string str;
+      while (getline(infile, str))
+      {
+       //
+        vector<String> splits;
+      }
+      infile.close();
+      removeTempDirectory_(tmp_dir);
+    }
 };
 
 
