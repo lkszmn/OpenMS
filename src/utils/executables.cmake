@@ -32,6 +32,7 @@ MetaboliteSpectralMatcher
 MetaProSIP
 MRMPairFinder
 MSFraggerAdapter
+MSGFPlus
 MSSimulator
 MSstatsConverter
 MultiplexResolver
