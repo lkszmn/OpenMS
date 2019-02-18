@@ -68,6 +68,7 @@ include(include/OpenMS/CHEMISTRY/MASSDECOMPOSITION/sources.cmake)
 include(include/OpenMS/FORMAT/sources.cmake)
 include(include/OpenMS/FORMAT/DATAACCESS/sources.cmake)
 include(include/OpenMS/FORMAT/HANDLERS/sources.cmake)
+include(include/OpenMS/FORMAT/MZTAB/sources.cmake)
 include(include/OpenMS/FORMAT/VALIDATORS/sources.cmake)
 include(include/OpenMS/FORMAT/OPTIONS/sources.cmake)
 
